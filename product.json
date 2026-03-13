@@ -1,0 +1,120 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "barcode": "4600051005478",
+      "vendorCode": "NSF-200-RB-001",
+      "supplier": "ЗАО Доброном Минск",
+      "name": "Кофе Нескафе Голд 200 г",
+      "manufacturerCountry": "Россия",
+      "price": 15.99,
+      "pricePerKg": 79.95,
+      "currency": "Br",
+      "isOnSale": true,
+      "discountPercentage": 20,
+      "oldPrice": 19.99,
+      "inStock": true,
+      "quantity": 47,
+      "category": "Бакалея",
+      "subcategory": "Чай, кофе",
+      "description": "Растворимый кофе, мягкий вкус, 200 г",
+      "priceSetDate": "2026-03-13T09:15:00",
+      "priceTagPrintDate": "2026-03-13T10:30:00",
+      "images": [
+        {
+          "url": "/images/nescafe-gold-200-1.jpg",
+          "tag": "хит"
+        },
+        {
+          "url": "/images/nescafe-gold-200-2.jpg",
+          "tag": "сужка да 20%"
+        },
+        {
+          "url": "/images/nescafe-gold-200-bzmzh.jpg",
+          "tag": "бзмж"
+        }
+      ],
+      "specifications": {
+        "weight": "200 г",
+        "type": "растворимый сублимированный",
+        "packaging": "стеклянная банка"
+      }
+    },
+    {
+      "id": 2,
+      "barcode": "4810151001234",
+      "vendorCode": "MIL-1L-23-002",
+      "supplier": "ОАО Минский Молочный Завод №1",
+      "name": "Молоко Берестье 3.2% 1 л",
+      "manufacturerCountry": "РБ",
+      "price": 2.45,
+      "pricePerKg": 2.45,
+      "currency": "Br",
+      "isOnSale": false,
+      "discountPercentage": 0,
+      "oldPrice": 2.45,
+      "inStock": true,
+      "quantity": 128,
+      "category": "Молочные продукты",
+      "subcategory": "Молоко",
+      "description": "Питьевое пастеризованное молоко, 3.2% жирности",
+      "priceSetDate": "2026-03-12T14:20:00",
+      "priceTagPrintDate": "2026-03-13T08:45:00",
+      "images": [
+        {
+          "url": "/images/berestye-milk-1l-1.jpg",
+          "tag": "свіжая малочка"
+        },
+        {
+          "url": "/images/berestye-milk-1l-bzmzh.jpg",
+          "tag": "бзмж"
+        }
+      ],
+      "specifications": {
+        "volume": "1 л",
+        "fat": "3.2%",
+        "package": "тетрапак"
+      }
+    },
+    {
+      "id": 3,
+      "barcode": "4810333009876",
+      "vendorCode": "CHOC-ALEN-90-003",
+      "supplier": "СП ОАО Спартак",
+      "name": "Шоколад Аленка молочный 90 г",
+      "manufacturerCountry": "РБ",
+      "price": 3.29,
+      "pricePerKg": 36.56,
+      "currency": "Br",
+      "isOnSale": true,
+      "discountPercentage": 15,
+      "oldPrice": 3.87,
+      "inStock": true,
+      "quantity": 84,
+      "category": "Кондитерские изделия",
+      "subcategory": "Шоколад",
+      "description": "Молочный шоколад с какао",
+      "priceSetDate": "2026-03-10T11:05:00",
+      "priceTagPrintDate": "2026-03-13T09:00:00",
+      "images": [
+        {
+          "url": "/images/alenka-choco-90-1.jpg",
+          "tag": "суперцена"
+        },
+        {
+          "url": "/images/alenka-choco-90-sugar.jpg",
+          "tag": "сзмж"
+        },
+        {
+          "url": "/images/alenka-choco-90-box.jpg",
+          "tag": "акцыя"
+        }
+      ],
+      "specifications": {
+        "weight": "90 г",
+        "type": "молочный",
+        "maker": "Спартак"
+      }
+    }
+  ]
+}
