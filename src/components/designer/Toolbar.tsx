@@ -2,7 +2,7 @@ import { useDesigner } from '@/contexts/DesignerContext';
 import { CanvasElement } from '@/types/designer';
 import {
   Type, Square, Minus, Image, Grid3X3, Eye, EyeOff,
-  ChevronLeft, ChevronRight, FileDown, Printer, Save
+  ChevronLeft, ChevronRight, FileDown, Printer
 } from 'lucide-react';
 import { v4ID } from '@/lib/idgen';
 
@@ -23,7 +23,7 @@ export function Toolbar() {
       textAlign: 'left',
       alignH: 'left',
       alignV: 'center',
-      color: '#e2e8f0',
+      color: '#000000',
       content: type === 'text' ? 'Text' : undefined,
       backgroundColor: type === 'rectangle' ? 'transparent' : undefined,
       borderColor: type === 'rectangle' || type === 'line' ? '#475569' : undefined,
@@ -117,7 +117,12 @@ export function Toolbar() {
         if (i > 0) pdf.addPage();
         pdf.addImage(imgData, 'PNG', margin, margin, Math.max(w, 1), Math.max(h, 1));
       }
-      pdf.save('price-tags-all.pdf');
+
+      const blobUrl = pdf.output('bloburl');
+      const win = window.open(blobUrl, '_blank');
+      if (!win) {
+        alert('Браузер заблокировал открытие PDF. Разрешите всплывающие окна для этого сайта.');
+      }
       return;
     }
 
@@ -160,49 +165,11 @@ export function Toolbar() {
       }
     }
 
-    pdf.save('price-tags-grid.pdf');
-  };
-
-  const handleSaveTemplate = () => {
-    const name = window.prompt('Название шаблона', state.template.name || 'New template');
-    if (!name) return;
-    const existingRaw = localStorage.getItem('tag-templates');
-    const list: any[] = existingRaw ? JSON.parse(existingRaw) : [];
-    const tmpl = { ...state.template, name };
-    const idx = list.findIndex(t => t.id === tmpl.id || t.name === name);
-    if (idx >= 0) {
-      list[idx] = tmpl;
-    } else {
-      list.push(tmpl);
+    const blobUrl = pdf.output('bloburl');
+    const win = window.open(blobUrl, '_blank');
+    if (!win) {
+      alert('Браузер заблокировал открытие PDF. Разрешите всплывающие окна для этого сайта.');
     }
-    localStorage.setItem('tag-templates', JSON.stringify(list));
-    localStorage.setItem('tag-template-last', JSON.stringify(tmpl));
-  };
-
-  const handleLoadTemplate = () => {
-    const existingRaw = localStorage.getItem('tag-templates');
-    if (!existingRaw) {
-      const last = localStorage.getItem('tag-template-last');
-      if (last) {
-        dispatch({ type: 'LOAD_TEMPLATE', payload: JSON.parse(last) });
-      } else {
-        alert('Сохранённых шаблонов пока нет.');
-      }
-      return;
-    }
-    const list: any[] = JSON.parse(existingRaw);
-    if (!list.length) {
-      alert('Сохранённых шаблонов пока нет.');
-      return;
-    }
-    const names = list.map((t, i) => `${i + 1}. ${t.name || t.id}`).join('\n');
-    const input = window.prompt(`Выберите номер шаблона:\n${names}`, '1');
-    if (!input) return;
-    const index = Number(input) - 1;
-    if (Number.isNaN(index) || index < 0 || index >= list.length) return;
-    const tmpl = list[index];
-    localStorage.setItem('tag-template-last', JSON.stringify(tmpl));
-    dispatch({ type: 'LOAD_TEMPLATE', payload: tmpl });
   };
 
   return (
@@ -265,15 +232,6 @@ export function Toolbar() {
 
       {/* Right: export */}
       <div className="flex items-center gap-1">
-        <button onClick={handleSaveTemplate} className="toolbar-btn" title="Save Template">
-          <Save className="w-4 h-4" />
-        </button>
-        <button onClick={handleLoadTemplate} className="toolbar-btn text-xs px-2" title="Load Template">
-          Load
-        </button>
-
-        <div className="w-px h-5 bg-border mx-2" />
-
         <button onClick={handleExportPDF} className="toolbar-btn" title="Export PDF">
           <FileDown className="w-4 h-4" />
         </button>

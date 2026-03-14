@@ -2,6 +2,7 @@ import { useDesigner } from '@/contexts/DesignerContext';
 import { CanvasElement } from '@/types/designer';
 import { Rnd } from 'react-rnd';
 import { v4ID } from '@/lib/idgen';
+import { useEffect, useRef } from 'react';
 
 // Scale: 1mm = 3px for display
 const MM_TO_PX = 3;
@@ -9,6 +10,7 @@ const MM_TO_PX = 3;
 export function DesignCanvas() {
   const { state, dispatch, snapValue, getFieldValue } = useDesigner();
   const { template, selectedElementId, isPreviewMode } = state;
+  const clipboardRef = useRef<CanvasElement | null>(null);
 
   const canvasW = template.width * MM_TO_PX;
   const canvasH = template.height * MM_TO_PX;
@@ -40,17 +42,104 @@ export function DesignCanvas() {
       fontWeight: 'normal',
       fontFamily: 'Inter',
       textAlign: 'left',
-      color: '#e2e8f0',
+      color: '#000000',
     };
     dispatch({ type: 'ADD_ELEMENT', payload: el });
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) {
+        return;
+      }
+
+      if (state.isPreviewMode) return;
+
+      const currentId = state.selectedElementId;
+
+      // Copy selected element
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        if (!currentId) return;
+        const el = state.template.elements.find(el => el.id === currentId);
+        if (!el) return;
+        e.preventDefault();
+        clipboardRef.current = { ...el };
+        return;
+      }
+
+      // Paste element from clipboard
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+        const src = clipboardRef.current;
+        if (!src) return;
+        e.preventDefault();
+
+        const offset = 10;
+        const newEl: CanvasElement = {
+          ...src,
+          id: v4ID(),
+          x: snapValue(src.x + offset),
+          y: snapValue(src.y + offset),
+        };
+
+        dispatch({ type: 'ADD_ELEMENT', payload: newEl });
+        return;
+      }
+
+      if (!currentId) return;
+
+      // Delete selected element
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        dispatch({ type: 'DELETE_ELEMENT', payload: currentId });
+        return;
+      }
+
+      // Nudge with arrows (Shift = 10px)
+      if (
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight' ||
+        e.key === 'ArrowUp' ||
+        e.key === 'ArrowDown'
+      ) {
+        e.preventDefault();
+        const el = state.template.elements.find(el => el.id === currentId);
+        if (!el) return;
+
+        const step = e.shiftKey ? 10 : 1;
+        let dx = 0;
+        let dy = 0;
+
+        if (e.key === 'ArrowLeft') dx = -step;
+        if (e.key === 'ArrowRight') dx = step;
+        if (e.key === 'ArrowUp') dy = -step;
+        if (e.key === 'ArrowDown') dy = step;
+
+        const newX = snapValue(el.x + dx);
+        const newY = snapValue(el.y + dy);
+
+        dispatch({
+          type: 'UPDATE_ELEMENT',
+          payload: {
+            id: currentId,
+            updates: { x: newX, y: newY },
+          },
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state.isPreviewMode, state.selectedElementId, state.template.elements, dispatch, snapValue]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
   };
 
-  const renderContent = (el: CanvasElement) => {
+  const renderContent = (el: CanvasElement, preview: boolean) => {
     const hAlign = el.alignH || el.textAlign || 'left';
     const vAlign = el.alignV || 'center';
 
@@ -73,7 +162,7 @@ export function DesignCanvas() {
     };
 
     const rawFieldValue = (fallback?: string) =>
-      isPreviewMode ? getFieldValue(el.fieldKey || '') : fallback || `{${el.fieldKey}}`;
+      preview ? getFieldValue(el.fieldKey || '') : fallback || `{${el.fieldKey}}`;
 
     const formatNumberForElement = (val: string, el: CanvasElement) => {
       const num = Number(val.replace(',', '.'));
@@ -105,7 +194,13 @@ export function DesignCanvas() {
 
     const fieldValue = (fallback?: string) => {
       const v = rawFieldValue(fallback);
-      if (el.type === 'field' && el.numberFormatMode && isPreviewMode) {
+      const allowedForNumberFormat = ['price', 'pricePerKg', 'oldPrice'];
+      if (
+        el.type === 'field' &&
+        el.numberFormatMode &&
+        preview &&
+        allowedForNumberFormat.includes(el.fieldKey || '')
+      ) {
         return formatNumberForElement(String(v), el);
       }
       return v;
@@ -227,7 +322,7 @@ export function DesignCanvas() {
   return (
     <div
       id="canvas-wrapper"
-      className="flex-1 bg-canvas-bg overflow-auto flex items-center justify-center p-8"
+      className="relative flex-1 bg-canvas-bg overflow-auto flex items-center justify-center p-8"
       onClick={handleCanvasClick}
     >
       <div
@@ -247,25 +342,7 @@ export function DesignCanvas() {
         {template.elements
           .slice()
           .sort((a, b) => (a.layer ?? 0) - (b.layer ?? 0))
-          .map(el => {
-          if (isPreviewMode) {
-            return (
-              <div
-                key={el.id}
-                style={{
-                  position: 'absolute',
-                  left: el.x,
-                  top: el.y,
-                  width: el.width,
-                  height: el.height,
-                }}
-              >
-                {renderContent(el)}
-              </div>
-            );
-          }
-
-          return (
+          .map(el => (
             <Rnd
               key={el.id}
               position={{ x: el.x, y: el.y }}
@@ -316,10 +393,51 @@ export function DesignCanvas() {
                 topLeft: { cursor: 'nw-resize' },
               }}
             >
-              {renderContent(el)}
+              {renderContent(el, isPreviewMode)}
             </Rnd>
-          );
-        })}
+          ))}
+      </div>
+      {/* Mini print preview in the top-right corner of design area */}
+      <div
+        className="pointer-events-none absolute right-4 top-4 bg-black/40 rounded-md p-1"
+        style={{ zIndex: 50 }}
+      >
+        <div
+          style={{
+            width: canvasW * 0.35,
+            height: canvasH * 0.35,
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: canvasW,
+              height: canvasH,
+              transform: 'scale(0.35)',
+              transformOrigin: 'top left',
+              backgroundColor: template.backgroundColor || '#ffffff',
+              position: 'relative',
+            }}
+          >
+            {template.elements
+              .slice()
+              .sort((a, b) => (a.layer ?? 0) - (b.layer ?? 0))
+              .map(el => (
+                <div
+                  key={`preview-${el.id}`}
+                  style={{
+                    position: 'absolute',
+                    left: el.x,
+                    top: el.y,
+                    width: el.width,
+                    height: el.height,
+                  }}
+                >
+                  {renderContent(el, true)}
+                </div>
+              ))}
+          </div>
+        </div>
       </div>
     </div>
   );

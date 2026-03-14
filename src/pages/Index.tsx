@@ -3,7 +3,6 @@ import { DataPanel } from '@/components/designer/DataPanel';
 import { PropertyPanel } from '@/components/designer/PropertyPanel';
 import { Toolbar } from '@/components/designer/Toolbar';
 import { DesignCanvas } from '@/components/designer/DesignCanvas';
-import { PrintLayoutPreview } from '@/components/designer/PrintLayoutPreview';
 import { Tag } from 'lucide-react';
 
 const Index = () => {
@@ -27,8 +26,6 @@ const Index = () => {
           <PropertyPanel />
         </div>
 
-        {/* Print layout preview (how tags fall on sheet) - bottom of page */}
-        <PrintLayoutPreview />
       </div>
     </DesignerProvider>
   );
