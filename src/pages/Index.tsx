@@ -4,16 +4,26 @@ import { PropertyPanel } from '@/components/designer/PropertyPanel';
 import { Toolbar } from '@/components/designer/Toolbar';
 import { DesignCanvas } from '@/components/designer/DesignCanvas';
 import { Tag } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <DesignerProvider>
       <div className="h-screen flex flex-col overflow-hidden">
         {/* Top bar */}
-        <div className="bg-panel-header border-b border-border px-4 py-2 flex items-center gap-3">
-          <Tag className="w-5 h-5 text-accent" />
-          <h1 className="text-sm font-bold tracking-wide">Price Tag Designer</h1>
-          <span className="text-xs text-muted-foreground ml-2">FastReport-style editor</span>
+        <div className="bg-panel-header border-b border-border px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Tag className="w-5 h-5 text-accent" />
+            <h1 className="text-sm font-bold tracking-wide">PriceTAGenerator</h1>
+          </div>
+          <button
+            onClick={() => navigate('/')}
+            className="toolbar-btn text-xs px-3 py-1"
+          >
+            На главную
+          </button>
         </div>
 
         {/* Toolbar */}

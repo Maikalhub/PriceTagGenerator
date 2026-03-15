@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -61,12 +61,28 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply text-foreground font-sans;
     font-family: 'Inter', sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(59,130,246,0.35), transparent 55%),
+      radial-gradient(circle at bottom right, rgba(16,185,129,0.25), transparent 55%),
+      hsl(var(--background));
   }
 
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Убираем стандартные белые стрелочки у input[type=number] */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
   }
 }
 
@@ -79,7 +95,7 @@
   }
 
   .panel-section {
-    @apply border-b border-border p-3;
+    @apply border-b border-border p-3 bg-card/40;
   }
 
   .panel-label {
@@ -93,7 +109,8 @@
   }
 
   .toolbar-btn {
-    @apply p-2 rounded-md hover:bg-secondary text-muted-foreground 
+    @apply p-2 rounded-md border border-transparent bg-secondary/40
+           hover:bg-secondary hover:border-border text-muted-foreground 
            hover:text-foreground transition-colors;
   }
 

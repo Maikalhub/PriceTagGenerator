@@ -42,6 +42,13 @@ export function PropertyPanel() {
   const isBarcodeField =
     selectedElement.type === 'field' &&
     (selectedElement.fieldKey === 'barcode' || selectedElement.isBarcode);
+  const isOldPriceField =
+    selectedElement.type === 'field' && selectedElement.fieldKey === 'oldPrice';
+  const isNumberFormatField =
+    selectedElement.type === 'field' &&
+    (selectedElement.fieldKey === 'price' ||
+      selectedElement.fieldKey === 'pricePerKg' ||
+      selectedElement.fieldKey === 'oldPrice');
 
   return (
     <div className="w-56 bg-panel-bg border-l border-border flex flex-col h-full overflow-hidden">
@@ -196,6 +203,9 @@ export function PropertyPanel() {
                   className="property-input mt-0.5"
                 >
                   <option value="Inter">Inter</option>
+                  <option value="Roboto">Roboto</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Playfair Display">Playfair Display</option>
                   <option value="JetBrains Mono">JetBrains Mono</option>
                   <option value="Arial">Arial</option>
                   <option value="Georgia">Georgia</option>
@@ -204,8 +214,8 @@ export function PropertyPanel() {
               </label>
             </div>
 
-            {/* Number formatting for field elements (price etc.) */}
-            {selectedElement.type === 'field' && (
+            {/* Number formatting only for price / pricePerKg / oldPrice */}
+            {isNumberFormatField && (
               <div className="panel-section">
                 <div className="panel-label">Number format</div>
                 <div className="grid grid-cols-2 gap-2 mb-2">
@@ -246,6 +256,52 @@ export function PropertyPanel() {
                     className="cursor-pointer"
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Old price strike-through settings */}
+            {isOldPriceField && (
+              <div className="panel-section">
+                <div className="panel-label">Old price style</div>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <label className="text-xs text-muted-foreground">
+                    Strike
+                    <select
+                      value={selectedElement.strikeThroughMode || 'none'}
+                      onChange={e =>
+                        update({
+                          strikeThroughMode: e.target.value as CanvasElement['strikeThroughMode'],
+                        })
+                      }
+                      className="property-input mt-0.5"
+                    >
+                      <option value="none">Нет</option>
+                      <option value="horizontal">Горизонтальная</option>
+                      <option value="diagonalLeft">Диагональ ↙↗</option>
+                      <option value="diagonalRight">Диагональ ↗↙</option>
+                    </select>
+                  </label>
+                  <label className="text-xs text-muted-foreground">
+                    Толщина
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={selectedElement.strikeThroughWidth ?? 2}
+                      onChange={e => update({ strikeThroughWidth: +e.target.value })}
+                      className="property-input mt-0.5"
+                    />
+                  </label>
+                </div>
+                <label className="text-xs text-muted-foreground block">
+                  Цвет линии
+                  <input
+                    type="color"
+                    value={selectedElement.strikeThroughColor || selectedElement.color || '#000000'}
+                    onChange={e => update({ strikeThroughColor: e.target.value })}
+                    className="property-input mt-0.5 h-7 p-0.5 cursor-pointer"
+                  />
+                </label>
               </div>
             )}
 
@@ -345,6 +401,33 @@ export function PropertyPanel() {
         {(selectedElement.type === 'rectangle' || selectedElement.type === 'line') && (
           <div className="panel-section">
             <div className="panel-label">Appearance</div>
+            {selectedElement.type === 'rectangle' && (
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <label className="text-xs text-muted-foreground">
+                  Shape
+                  <select
+                    value={selectedElement.shapeKind || 'rect'}
+                    onChange={e =>
+                      update({ shapeKind: e.target.value as CanvasElement['shapeKind'] })
+                    }
+                    className="property-input mt-0.5"
+                  >
+                    <option value="rect">Rectangle</option>
+                    <option value="circle">Circle</option>
+                    <option value="triangle">Triangle</option>
+                  </select>
+                </label>
+                <label className="text-xs text-muted-foreground">
+                  Radius
+                  <input
+                    type="number"
+                    value={selectedElement.borderRadius ?? 0}
+                    onChange={e => update({ borderRadius: +e.target.value })}
+                    className="property-input mt-0.5"
+                  />
+                </label>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <label className="text-xs text-muted-foreground">
                 Fill
@@ -373,17 +456,6 @@ export function PropertyPanel() {
                   className="property-input mt-0.5"
                 />
               </label>
-              {selectedElement.type === 'rectangle' && (
-                <label className="text-xs text-muted-foreground">
-                  Radius
-                  <input
-                    type="number"
-                    value={selectedElement.borderRadius ?? 0}
-                    onChange={e => update({ borderRadius: +e.target.value })}
-                    className="property-input mt-0.5"
-                  />
-                </label>
-              )}
             </div>
           </div>
         )}

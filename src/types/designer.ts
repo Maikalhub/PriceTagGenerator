@@ -18,6 +18,7 @@ export interface CanvasElement {
   borderColor?: string;
   borderWidth?: number;
   borderRadius?: number;
+  shapeKind?: 'rect' | 'circle' | 'triangle';
   // Image props
   imageUrl?: string;
   // Line props
@@ -34,6 +35,10 @@ export interface CanvasElement {
   numberFormatMode?: 'default' | 'integer' | 'fraction';
   numberDecimals?: number;
   numberRound?: boolean;
+  // Old price / strike-through settings
+  strikeThroughMode?: 'none' | 'horizontal' | 'diagonalLeft' | 'diagonalRight';
+  strikeThroughColor?: string;
+  strikeThroughWidth?: number;
   // Layer / z-index
   layer?: number;
 }

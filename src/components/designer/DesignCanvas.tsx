@@ -3,6 +3,7 @@ import { CanvasElement } from '@/types/designer';
 import { Rnd } from 'react-rnd';
 import { v4ID } from '@/lib/idgen';
 import { useEffect, useRef } from 'react';
+import JsBarcode from 'jsbarcode';
 
 // Scale: 1mm = 3px for display
 const MM_TO_PX = 3;
@@ -134,6 +135,63 @@ export function DesignCanvas() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [state.isPreviewMode, state.selectedElementId, state.template.elements, dispatch, snapValue]);
 
+  // Рендерим реальные штрихкоды с помощью JsBarcode
+  useEffect(() => {
+    state.template.elements.forEach(el => {
+      if (el.type !== 'field' || !el.isBarcode) return;
+      const svgs = Array.from(
+        document.querySelectorAll<SVGSVGElement>(`svg[data-barcode-id="${el.id}"]`)
+      );
+      if (!svgs.length) return;
+      const rawVal = getFieldValue(el.fieldKey || '');
+      const value = String(rawVal || '0000000000000');
+
+      svgs.forEach(svg => {
+        // очищаем перед новым рендерингом
+        svg.innerHTML = '';
+
+        const barColor = el.barcodeColor || '#000000';
+        const background = el.barcodeBackground || '#ffffff';
+        const fontSize = (el.fontSize || 14) * 0.9;
+
+        // Приблизительно подбираем ширину штрихов, чтобы штрихкод занимал всю ширину элемента
+        const estimatedChars = value.length || 12;
+        const barWidth = Math.max(1, (el.width || 100) / (estimatedChars * 12));
+        const barHeight = Math.max(10, (el.height || 40) - (el.barcodeShowText ? 18 : 4));
+
+        const optionsBase = {
+          lineColor: barColor,
+          background,
+          fontSize,
+          margin: 0,
+          width: barWidth,
+          height: barHeight,
+          displayValue: el.barcodeShowText ?? true,
+        } as const;
+
+        const desiredFormat = (el.barcodeType || 'EAN13') as any;
+
+        try {
+          JsBarcode(svg, value, {
+            ...optionsBase,
+            format: desiredFormat,
+          });
+        } catch {
+          // Fallback: если значение не подходит под EAN‑13/EAN‑8, пробуем Code128,
+          // чтобы хотя бы визуально был корректный штрихкод
+          try {
+            JsBarcode(svg, value, {
+              ...optionsBase,
+              format: 'CODE128' as any,
+            });
+          } catch {
+            // если совсем не удалось — ничего не рисуем
+          }
+        }
+      });
+    });
+  }, [state.template, state.previewIndex, getFieldValue]);
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
@@ -206,26 +264,42 @@ export function DesignCanvas() {
       return v;
     };
 
+    const renderWithStrike = (content: React.ReactNode) => {
+      const mode = el.strikeThroughMode || 'none';
+      if (el.fieldKey !== 'oldPrice' || mode === 'none') return content;
+
+      const color = el.strikeThroughColor || el.color || '#000000';
+      const width = el.strikeThroughWidth ?? 2;
+
+      const lineBase: React.CSSProperties = {
+        position: 'absolute',
+        left: '5%',
+        right: '5%',
+        top: '50%',
+        borderTop: `${width}px solid ${color}`,
+        transformOrigin: 'center',
+      };
+
+      let lineStyle: React.CSSProperties = lineBase;
+      if (mode === 'diagonalLeft') {
+        lineStyle = { ...lineBase, top: '50%', transform: 'rotate(-20deg)' };
+      } else if (mode === 'diagonalRight') {
+        lineStyle = { ...lineBase, top: '50%', transform: 'rotate(20deg)' };
+      }
+
+      return (
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          {content}
+          <div style={lineStyle} />
+        </div>
+      );
+    };
+
     switch (el.type) {
       case 'text':
-        return <div style={textStyle}>{el.content || 'Text'}</div>;
+        return renderWithStrike(<div style={textStyle}>{el.content || 'Text'}</div>);
       case 'field':
         if (el.isBarcode) {
-          const value = fieldValue('0000000000000');
-          // Генерация последовательности "полоса/пробел" разной толщины
-          const digits = String(value).replace(/\D/g, '') || '0000000000000';
-          const segments: { key: string; width: number; isBar: boolean }[] = [];
-          digits.split('').forEach((d, idx) => {
-            const n = parseInt(d, 10);
-            const barWidth = 1 + (n % 3); // тонкая/средняя/толстая полоса
-            const spaceWidth = 1 + ((9 - n) % 2); // разная ширина пробелов
-            segments.push(
-              { key: `${idx}-bar`, width: barWidth, isBar: true },
-              { key: `${idx}-space`, width: spaceWidth, isBar: false },
-            );
-          });
-          const totalUnits = segments.reduce((sum, s) => sum + s.width, 0);
-
           const alignH = el.barcodeAlignH || 'center';
           const alignV = el.barcodeAlignV || 'bottom';
 
@@ -245,55 +319,58 @@ export function DesignCanvas() {
                 backgroundColor: el.barcodeBackground || '#ffffff',
               }}
             >
-              <div
-                style={{
-                  width: '90%',
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'stretch',
-                  justifyContent: 'stretch',
-                }}
-              >
-                {segments.map(s => (
-                  <div
-                    key={s.key}
-                    style={{
-                      flexGrow: s.width,
-                      flexBasis: `${(s.width / totalUnits) * 100}%`,
-                      backgroundColor: s.isBar ? (el.barcodeColor || '#000000') : 'transparent',
-                    }}
-                  />
-                ))}
-              </div>
-              {(el.barcodeShowText ?? true) && (
-                <div
-                  style={{
-                    marginTop: 4,
-                    fontSize: (el.fontSize || 14) * 0.9,
-                    fontFamily: el.fontFamily || 'Inter',
-                    letterSpacing: 1,
-                    color: el.barcodeColor || '#000000',
-                  }}
-                >
-                  {value}
-                </div>
-              )}
+              <svg
+                data-barcode-id={el.id}
+                preserveAspectRatio="none"
+                style={{ width: '100%', height: '100%' }}
+              />
             </div>
           );
         }
-        return <div style={textStyle}>{fieldValue()}</div>;
-      case 'rectangle':
-        return (
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: el.backgroundColor || 'transparent',
-              border: `${el.borderWidth || 1}px solid ${el.borderColor || '#475569'}`,
-              borderRadius: el.borderRadius || 0,
-            }}
-          />
-        );
+        return renderWithStrike(<div style={textStyle}>{fieldValue()}</div>);
+      case 'rectangle': {
+        const shape = el.shapeKind || 'rect';
+        const baseStyle: React.CSSProperties = {
+          width: '100%',
+          height: '100%',
+          backgroundColor: el.backgroundColor || 'transparent',
+          border: `${el.borderWidth || 1}px solid ${el.borderColor || '#475569'}`,
+          borderRadius: el.borderRadius || 0,
+        };
+
+        if (shape === 'circle') {
+          return <div style={{ ...baseStyle, borderRadius: 9999 }} />;
+        }
+
+        if (shape === 'triangle') {
+          return (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  width: '140%',
+                  height: '140%',
+                  inset: '-20%',
+                  backgroundColor: el.backgroundColor || 'transparent',
+                  borderTop: `${el.borderWidth || 1}px solid ${el.borderColor || '#475569'}`,
+                  borderLeft: `${el.borderWidth || 1}px solid ${el.borderColor || '#475569'}`,
+                  transform: 'rotate(-45deg)',
+                  transformOrigin: 'center',
+                }}
+              />
+            </div>
+          );
+        }
+
+        return <div style={baseStyle} />;
+      }
       case 'line':
         return (
           <div
