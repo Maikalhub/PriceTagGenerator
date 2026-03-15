@@ -40,7 +40,8 @@ const defaultTemplate: TagTemplate = {
 const defaultPrintSettings: PrintSettings = {
   paperWidth: 210,   // A4 width
   paperHeight: 297,  // A4 height
-  margin: 5,
+  // Увеличенный базовый отступ, чтобы при печати ни текст, ни рамка не попадали в область обрезки принтера
+  margin: 10,
   spacing: 2,
   columns: 3,
   rows: 8,

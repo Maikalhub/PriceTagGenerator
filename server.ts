@@ -67,7 +67,8 @@ app.post('/api/render', (req, res) => {
       (layout?.paperWidth || template.width) * 2.835, // mm -> pt примерно
       (layout?.paperHeight || template.height) * 2.835,
     ],
-    margin: (layout?.margin || 5) * 2.835,
+    // Увеличенный базовый отступ по умолчанию, чтобы текст гарантированно не попадал в зону "непечатаемых" краёв принтера
+    margin: (layout?.margin || 10) * 2.835,
   });
 
   doc.pipe(res);

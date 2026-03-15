@@ -192,12 +192,18 @@ export function Toolbar() {
         format: [w, h],
       });
 
-    // Simple mode: один ценник на страницу, как раньше
+    // Simple mode: один ценник на листе.
+    // Делаем так же, как в PrintLayoutPreview: ценник по центру листа заданного размера,
+    // чтобы превью и итоговый PDF совпадали по расположению.
     if (printSettings.layoutMode === 'single') {
-      const pdf = createDoc(template.width, template.height);
-      const margin = printSettings.margin || 0;
-      const w = template.width - margin * 2;
-      const h = template.height - margin * 2;
+      const { paperWidth, paperHeight } = printSettings;
+      const cellW = template.width;
+      const cellH = template.height;
+      const pdf = createDoc(paperWidth, paperHeight);
+
+      // Центровка на листе, как в PrintLayoutPreview
+      const xPos = (paperWidth - cellW) / 2;
+      const yPos = (paperHeight - cellH) / 2;
 
       for (let i = 0; i < jsonData.length; i++) {
         dispatch({ type: 'SET_PREVIEW_INDEX', payload: i });
@@ -205,7 +211,7 @@ export function Toolbar() {
         const c = await html2canvas(canvas, { backgroundColor: null, scale: 2 });
         const imgData = c.toDataURL('image/png');
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, 'PNG', margin, margin, Math.max(w, 1), Math.max(h, 1));
+        pdf.addImage(imgData, 'PNG', xPos, yPos, cellW, cellH);
       }
 
       const blobUrl = pdf.output('bloburl');
@@ -266,6 +272,8 @@ export function Toolbar() {
     { label: 'A4', value: '210x297' },
     { label: 'A5', value: '148x210' },
     { label: '100×150', value: '100x150' },
+    // Специальный вариант: печатать на листе ровно размера текущего ценника
+    { label: 'Как ценник', value: 'tag-size' },
   ];
 
   const currentSizeValue = `${state.printSettings.paperWidth}x${state.printSettings.paperHeight}`;
@@ -454,6 +462,17 @@ export function Toolbar() {
               const val = e.target.value;
               if (val === 'custom') {
                 handleOpenPaperDialog();
+                return;
+              }
+              if (val === 'tag-size') {
+                // Лист будет ровно размера ценника, чтобы превью и печать совпадали 1:1
+                dispatch({
+                  type: 'SET_PRINT_SETTINGS',
+                  payload: {
+                    paperWidth: state.template.width,
+                    paperHeight: state.template.height,
+                  },
+                });
                 return;
               }
               const [w, h] = val.split('x').map(Number);
